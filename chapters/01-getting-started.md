@@ -185,9 +185,188 @@ openclaw gateway restart
 
 ---
 
-## 1.4 你的第一个技能
+## 1.4 实战案例：飞书文件传输技能
 
-### 1.4.1 查看可用技能
+OpenClaw 的强大之处在于可以通过技能扩展功能。让我们创建一个实用的飞书文件传输技能。
+
+### 1.4.1 技能功能
+
+这个技能可以：
+- ✅ 从 OpenClaw 自动发送文件到飞书
+- ✅ 支持任意文件类型（PDF、图片、文档等）
+- ✅ 无需手动操作
+- ✅ 可集成到自动化工作流
+
+### 1.4.2 实现代码
+
+创建 `feishu_file_transfer.py` 文件：
+
+```python
+#!/usr/bin/env python3
+# OpenClaw 飞书文件传输技能
+
+import urllib.request
+import json
+import ssl
+import os
+
+class FeishuFileTransfer:
+    def __init__(self, app_id, app_secret):
+        """初始化飞书传输器"""
+        self.app_id = app_id
+        self.app_secret = app_secret
+        
+        # SSL 上下文配置（解决证书验证问题）
+        self.ssl_context = ssl.create_default_context()
+        self.ssl_context.check_hostname = False
+        self.ssl_context.verify_mode = ssl.CERT_NONE
+    
+    def get_token(self):
+        """获取 tenant_access_token"""
+        url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+        data = {
+            "app_id": self.app_id,
+            "app_secret": self.app_secret
+        }
+        
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), method="POST")
+        req.add_header('Content-Type', 'application/json')
+        
+        with urllib.request.urlopen(req, context=self.ssl_context) as response:
+            result = response.read().decode('utf-8')
+            return json.loads(result)['tenant_access_token']
+    
+    def upload_file(self, token, file_path):
+        """上传文件到飞书并获取 file_key"""
+        url = "https://open.feishu.cn/open-apis/im/v1/files"
+        
+        # 读取文件内容
+        with open(file_path, 'rb') as f:
+            file_data = f.read()
+        
+        file_name = os.path.basename(file_path)
+        
+        # 构建 multipart 请求体
+        boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+        body = (
+            f"------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+            f"Content-Disposition: form-data; name=\"file\"; filename=\"{file_name}\"\r\n"
+            f"Content-Type: application/octet-stream\r\n\r\n"
+        ).encode('utf-8')
+        
+        body += file_data
+        body += b"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+        body += b'Content-Disposition: form-data; name="file_type"\r\n\r\n'
+        body += b'stream\r\n'
+        body += b"------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n"
+        
+        req = urllib.request.Request(url, data=body, method="POST")
+        req.add_header('Authorization', f'Bearer {token}')
+        req.add_header('Content-Type', f'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW')
+        
+        with urllib.request.urlopen(req, context=self.ssl_context) as response:
+            result = response.read().decode('utf-8')
+            return json.loads(result)['data']['file_key']
+    
+    def send_file(self, token, file_key, receive_id):
+        """发送文件给指定用户"""
+        url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id"
+        data = {
+            "receive_id": receive_id,
+            "msg_type": "file",
+            "content": json.dumps({"file_key": file_key})
+        }
+        
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), method="POST")
+        req.add_header('Authorization', f'Bearer {token}')
+        req.add_header('Content-Type', 'application/json')
+        
+        with urllib.request.urlopen(req, context=self.ssl_context) as response:
+            result = response.read().decode('utf-8')
+            return json.loads(result)
+    
+    def transfer_file(self, file_path, receive_id):
+        """完整的文件传输流程"""
+        token = self.get_token()
+        file_key = self.upload_file(token, file_path)
+        return self.send_file(token, file_key, receive_id)
+
+# 使用示例
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) < 4:
+        print("使用方法：python3 feishu_file_transfer.py <app_id> <app_secret> <文件路径> <接收者 open_id>")
+        sys.exit(1)
+    
+    app_id = sys.argv[1]
+    app_secret = sys.argv[2]
+    file_path = sys.argv[3]
+    receive_id = sys.argv[4]
+    
+    transfer = FeishuFileTransfer(app_id, app_secret)
+    result = transfer.transfer_file(file_path, receive_id)
+    
+    print("✅ 文件传输完成!" if result.get('code') == 0 else "❌ 文件传输失败!")
+```
+
+### 1.4.3 使用方法
+
+**步骤 1：设置环境变量**
+
+```bash
+export FEISHU_APP_ID="cli_xxxxxxxxxx"
+export FEISHU_APP_SECRET="xxxxxxxxxxxxxxxx"
+```
+
+**步骤 2：运行脚本**
+
+```bash
+python3 feishu_file_transfer.py $FEISHU_APP_ID $FEISHU_APP_SECRET ./test.pdf ou_xxxxxxxxxx
+```
+
+**步骤 3：验证结果**
+
+在飞书中查看是否收到文件。
+
+### 1.4.4 集成到 OpenClaw
+
+创建 SKILL.md 配置文件：
+
+```markdown
+---
+name: feishu-file-transfer
+description: 将文件发送到飞书平台
+allowed-tools: exec
+---
+
+# 飞书文件传输技能
+
+## 配置
+
+需要配置飞书机器人凭证：
+- `FEISHU_APP_ID`: 飞书机器人的 App ID
+- `FEISHU_APP_SECRET`: 飞书机器人的 App Secret
+
+## 使用方法
+
+```
+feishu_transfer_file <文件路径> <接收者 ID>
+```
+
+## 示例
+
+发送 PDF 文档：
+```
+feishu_transfer_file "/path/to/document.pdf" "ou_xxxxxxxxxx"
+```
+```
+
+---
+
+## 1.6 你的第一个技能
+
+### 1.6.1 查看可用技能
 
 ```bash
 # 列出已安装的 skill
@@ -197,7 +376,7 @@ openclaw skills list
 openclaw skills search 天气
 ```
 
-### 1.3.2 安装技能
+### 1.6.2 安装技能
 
 ```bash
 # 从 ClawHub 安装技能
@@ -207,7 +386,7 @@ openclaw skills install weather
 openclaw skills install ./my-skill
 ```
 
-### 1.3.3 使用技能
+### 1.6.3 使用技能
 
 安装完成后，技能会自动可用。例如天气技能：
 
@@ -216,7 +395,7 @@ openclaw skills install ./my-skill
 AI：北京今天晴转多云，最高温度 25°C...
 ```
 
-## 1.4 工作区结构
+## 1.7 工作区结构
 
 OpenClaw 工作区的标准结构：
 
@@ -231,7 +410,7 @@ OpenClaw 工作区的标准结构：
 └── TOOLS.md         # 工具配置
 ```
 
-### 1.5.1 重要文件说明
+### 1.7.1 重要文件说明
 
 **SOUL.md**：
 - 定义 AI 助手的人格和语气
@@ -249,7 +428,7 @@ OpenClaw 工作区的标准结构：
 - 定期执行的任务清单
 - 提醒和检查项
 
-## 1.6 常用命令
+## 1.8 常用命令
 
 ```bash
 # 查看状态
@@ -268,9 +447,9 @@ openclaw logs
 openclaw help
 ```
 
-## 1.7 故障排查
+## 1.9 故障排查
 
-### 1.6.1 常见问题
+### 1.9.1 常见问题
 
 **问题 1：技能无法安装**
 ```bash
@@ -305,13 +484,16 @@ openclaw configure --section api
 openclaw api test
 ```
 
-## 1.8 下一步
+## 1.10 下一步
 
 完成本章后，你应该能够：
 - ✅ 安装和配置 OpenClaw
+- ✅ 接入飞书机器人
+- ✅ 创建飞书文件传输技能
 - ✅ 安装和使用基本技能
 - ✅ 理解工作区结构
 - ✅ 使用常用命令
+- ✅ 排查常见问题
 
 **下一章**：[第 2 章：技能使用基础](./chapters/02-skill-usage-basics.md)
 
@@ -320,11 +502,13 @@ openclaw api test
 ## 练习题
 
 1. 安装 OpenClaw 并完成初次配置
-2. 安装一个天气技能并测试
-3. 查看工作区目录，了解各个文件的用途
-4. 尝试使用 `openclaw status` 查看系统状态
+2. 接入飞书机器人并测试对话
+3. 创建飞书文件传输技能并测试发送文件
+4. 安装一个天气技能并测试
+5. 查看工作区目录，了解各个文件的用途
+6. 尝试使用 `openclaw status` 查看系统状态
 
 ---
 
-**本章完成时间**：待完成
+**本章完成时间**：2026-03-16
 **最后更新**：2026-03-16
