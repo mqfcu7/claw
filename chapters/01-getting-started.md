@@ -78,9 +78,8 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 2. 登录飞书账号（没有账号需要先注册）
 3. 点击右上角 **开发者后台**
 
-![飞书开放平台](../images/feishu-open-platform.jpg)
-
-![飞书开发者后台入口](../images/feishu-developer-console.jpg)
+![飞书开发者后台入口](https://picx.zhimg.com/v2-333f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：https://zhuanlan.zhihu.com/p/2001018648215709469
 
 **步骤 2：创建应用**
 
@@ -89,7 +88,8 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 3. 填写应用名称（如：OpenClaw 助手）
 4. 点击 **创建**
 
-![创建飞书应用](../images/feishu-create-app.jpg)
+![创建飞书应用](https://pic1.zhimg.com/v2-339f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：知乎文章
 
 **步骤 3：获取应用凭证**
 
@@ -98,7 +98,8 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 
 > ⚠️ 重要：App Secret 只显示一次，请立即保存！
 
-![获取应用凭证](../images/feishu-credentials.jpg)
+![获取应用凭证](https://picx.zhimg.com/v2-351f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：知乎文章
 
 **步骤 4：添加机器人**
 
@@ -106,6 +107,9 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 2. 点击 **添加机器人**
 3. 填写机器人名称（如：OpenClaw）
 4. 点击 **保存**
+
+![添加机器人](https://pic1.zhimg.com/v2-357f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：知乎文章
 
 **步骤 5：配置权限**
 
@@ -115,7 +119,8 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 - `im:file` - 访问文件
 - `contact:contact` - 获取通讯录信息
 
-![配置权限](../images/feishu-permissions.jpg)
+![配置权限](https://picx.zhimg.com/v2-374f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：知乎文章
 
 **步骤 6：创建版本并发布**
 
@@ -125,11 +130,20 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 4. 提交审核
 5. 审核通过后点击 **发布为在线应用**
 
+![创建版本](https://pic1.zhimg.com/v2-380f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：知乎文章
+
+![发布应用](https://picx.zhimg.com/v2-390f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：知乎文章
+
 **步骤 7：在飞书中审批**
 
 1. 打开飞书客户端
 2. 进入 **审批**
 3. 找到应用发布审批，点击 **同意**
+
+![飞书审批](https://pic1.zhimg.com/v2-401f0b3e0b3f0b3e0b3f0b3e0b3f0b3e_r.jpg)
+> 截图来源：知乎文章
 
 ### 1.3.2 安装飞书插件
 
