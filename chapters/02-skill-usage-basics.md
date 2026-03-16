@@ -770,6 +770,403 @@ openclaw cron add --name "内容日报" \
 
 ---
 
+## 2.9 多模型配置与切换
+
+OpenClaw 支持配置多个 AI 模型供应商，并可根据任务需求灵活切换。
+
+### 2.9.1 配置多个模型
+
+在配置文件中添加多个模型的认证信息：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": "qwen3.5-plus",  // 默认模型
+      "auth": {
+        "providers": {
+          "bailian": {
+            "defaultProfile": "profile1",
+            "profiles": {
+              "profile1": {
+                "apiKey": "${DASHSCOPE_API_KEY}"
+              }
+            }
+          },
+          "zhipu": {
+            "defaultProfile": "profile1",
+            "profiles": {
+              "profile1": {
+                "apiKey": "${ZHIPU_API_KEY}"
+              }
+            }
+          },
+          "moonshot": {
+            "defaultProfile": "profile1",
+            "profiles": {
+              "profile1": {
+                "apiKey": "${MOONSHOT_API_KEY}"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**常见模型配置**：
+
+| 提供商 | 模型 ID | 适用场景 | 成本 |
+|--------|--------|---------|------|
+| `bailian/qwen3.5-plus` | 通义千问 | 日常对话、写作 | 低 |
+| `zhipu/glm-4-plus` | 智谱 GLM | 逻辑推理、代码 | 中 |
+| `moonshot/kimi-for-coding` | Kimi | 编程、长文本 | 中 |
+| `anthropic/claude-3-5-sonnet` | Claude | 复杂任务、写作 | 高 |
+
+### 2.9.2 按任务切换模型
+
+**方式 1：在定时任务中指定**
+
+```bash
+# 使用智谱模型生成周报
+openclaw cron add --name "周报" \
+  --cron "0 10 * * 1" \
+  --model zhipu/glm-4-plus \
+  --message "生成项目周报"
+
+# 使用 Kimi 处理长文档
+openclaw cron add --name "文档总结" \
+  --cron "0 18 * * *" \
+  --model moonshot/kimi-for-coding \
+  --message "总结今天的文档"
+```
+
+**方式 2：在技能配置中指定**
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": "qwen3.5-plus"  // 默认用通义
+    },
+    "byProvider": {
+      "zhipu": {
+        "model": "zhipu/glm-4-plus"  // 智谱任务用 GLM
+      }
+    }
+  }
+}
+```
+
+**方式 3：对话中临时切换**
+
+```
+你：切换到 Kimi 模型
+
+AI：好的，已切换到 moonshot/kimi-for-coding 模型
+
+你：帮我分析这个长文档...
+```
+
+### 2.9.3 模型选择建议
+
+**日常任务**（便宜模型）：
+- 天气查询
+- 简单问答
+- 日常聊天
+- 心跳检查
+
+**重要任务**（用好模型）：
+- 周报/日报生成
+- 代码审查
+- 复杂分析
+- 文档写作
+
+**经验法则**：
+- 心跳管日常 → 用便宜模型（如 qwen3.5-plus）
+- Cron 管精确 → 按需调配（重要任务用 opus/claude）
+- 两者组合用效果最好
+
+---
+
+## 2.10 多个飞书机器人配置
+
+OpenClaw 支持同时连接多个飞书机器人，适用于多账号、多场景管理。
+
+### 2.10.1 配置多个飞书账号
+
+```json
+{
+  "channels": {
+    "feishu": {
+      "enabled": true
+    },
+    "feishu-work": {
+      "enabled": true,
+      "appId": "cli_work_xxxxxxxxxx",
+      "appSecret": "work_xxxxxxxxxxxxxxxxx",
+      "domain": "feishu.cn"
+    },
+    "feishu-personal": {
+      "enabled": true,
+      "appId": "cli_personal_xxxxxxxxxx",
+      "appSecret": "personal_xxxxxxxxxxxxxxxxx",
+      "domain": "feishu.cn"
+    }
+  }
+}
+```
+
+### 2.10.2 按场景分配机器人
+
+**工作场景**：
+- 使用工作飞书机器人
+- 发送工作日报、会议提醒
+- 连接工作群组
+
+**个人场景**：
+- 使用个人飞书机器人
+- 发送个人提醒、生活记录
+- 连接私人聊天
+
+**配置示例**：
+
+```json
+{
+  "agents": {
+    "work-agent": {
+      "channels": ["feishu-work"],
+      "model": "qwen3.5-plus"
+    },
+    "personal-agent": {
+      "channels": ["feishu-personal"],
+      "model": "moonshot/kimi-for-coding"
+    }
+  }
+}
+```
+
+### 2.10.3 多机器人消息路由
+
+**SessionKey 示例**：
+
+```
+# 工作飞书机器人
+agent:main:feishu-work:default:dm:ou_xxxxxx
+
+# 个人飞书机器人
+agent:main:feishu-personal:default:dm:ou_xxxxxx
+```
+
+**消息发送**：
+
+```bash
+# 发送到工作飞书
+openclaw message send \
+  --channel feishu-work \
+  --target "ou_xxxxxx" \
+  --message "工作日报已生成"
+
+# 发送到个人飞书
+openclaw message send \
+  --channel feishu-personal \
+  --target "ou_xxxxxx" \
+  --message "提醒：该吃药了"
+```
+
+### 2.10.4 最佳实践
+
+**账号隔离**：
+- 工作账号：只处理工作相关任务
+- 个人账号：只处理个人生活任务
+- 避免消息混乱
+
+**权限管理**：
+- 工作机器人：配置工作相关权限
+- 个人机器人：配置个人相关权限
+- 最小权限原则
+
+**成本控制**：
+- 工作账号：公司承担 API 费用
+- 个人账号：个人承担 API 费用
+- 分别设置预算上限
+
+---
+
+## 2.11 长期记忆系统
+
+OpenClaw 拥有完善的长期记忆系统，让 AI 记住你的偏好、习惯和重要信息。
+
+### 2.11.1 记忆存储位置
+
+记忆存储在 `~/.openclaw/workspace/` 下：
+
+```
+~/.openclaw/workspace/
+├── MEMORY.md              # 全局长期记忆
+├── memory/
+│   ├── 2026-03-16.md      # 每日记忆
+│   ├── 2026-03-15.md
+│   └── projects/
+│       └── project-a.md   # 项目记忆
+└── agents/
+    └── main/
+        └── sessions/      # 短期记忆（会话）
+```
+
+**记忆类型**：
+
+| 类型 | 文件位置 | 说明 | 示例 |
+|------|---------|------|------|
+| 全局记忆 | `MEMORY.md` | 长期不变的偏好 | "我喜欢用中文交流" |
+| 每日记忆 | `memory/YYYY-MM-DD.md` | 当天发生的事 | "今天完成了第 1 章写作" |
+| 项目记忆 | `memory/projects/*.md` | 项目相关记忆 | "项目 A 的技术栈是 React" |
+| 会话记忆 | `agents/main/sessions/` | 短期对话历史 | 最近 60 分钟的对话 |
+
+### 2.11.2 写入记忆
+
+**方式 1：直接告诉 AI**
+
+```
+你：记住，我每天早上 7 点起床
+
+AI：好的，我已经记住了你的起床时间是每天早上 7 点
+[自动写入 MEMORY.md]
+```
+
+**方式 2：使用 `/remember` 命令**
+
+```
+你：/remember 我喜欢喝美式咖啡，不加糖
+
+AI：✅ 已记录到长期记忆
+```
+
+**方式 3：每日自动归档**
+
+每天结束时，OpenClaw 会自动将当天的会话记忆归档到 `memory/YYYY-MM-DD.md`：
+
+```markdown
+# 2026-03-16 记忆
+
+## 完成的任务
+- ✅ 编写第 1 章 OpenClaw 入门
+- ✅ 配置飞书机器人
+- ✅ 设置每日早报定时任务
+
+## 重要决策
+- 选择通义千问作为默认模型（成本低）
+- 周报使用智谱 GLM-4（逻辑更强）
+
+## 用户偏好
+- 喜欢简洁的回复风格
+- 偏好使用 Markdown 格式
+```
+
+### 2.11.3 检索记忆
+
+**自动检索**：
+
+AI 会在回答前自动检索相关记忆：
+
+```
+你：我平时几点起床？
+
+AI：[检索 MEMORY.md]
+根据你的记忆，你每天早上 7 点起床。
+```
+
+**手动检索**：
+
+```
+你：搜索一下关于咖啡的记忆
+
+AI：[搜索 memory/*.md]
+找到以下相关记忆：
+1. MEMORY.md: "我喜欢喝美式咖啡，不加糖"
+2. memory/2026-03-15.md: "今天在星巴克买了杯美式"
+```
+
+### 2.11.4 记忆管理
+
+**查看记忆**：
+
+```bash
+# 查看所有记忆文件
+ls ~/.openclaw/workspace/memory/
+
+# 查看全局记忆
+cat ~/.openclaw/workspace/MEMORY.md
+
+# 查看今日记忆
+cat ~/.openclaw/workspace/memory/2026-03-16.md
+```
+
+**编辑记忆**：
+
+```bash
+# 直接编辑 MEMORY.md
+vim ~/.openclaw/workspace/MEMORY.md
+
+# 删除某天的记忆
+rm ~/.openclaw/workspace/memory/2026-03-15.md
+```
+
+**清理过期记忆**：
+
+```bash
+# 删除 30 天前的记忆
+find ~/.openclaw/workspace/memory/ -name "*.md" -mtime +30 -delete
+```
+
+### 2.11.5 记忆配置
+
+在配置文件中设置记忆相关参数：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "memory": {
+        "search": {
+          "enabled": true,           // 启用记忆检索
+          "provider": "local",       // 使用本地检索
+          "maxResults": 5,           // 最多返回 5 条
+          "minScore": 0.5            // 最低相关度
+        },
+        "flush": {
+          "enabled": true,           // 启用自动归档
+          "interval": "24h",         // 每 24 小时归档一次
+          "compactAfter": "7d"       // 7 天后压缩旧记忆
+        }
+      }
+    }
+  }
+}
+```
+
+### 2.11.6 最佳实践
+
+**记忆分类**：
+- 全局记忆：长期不变的偏好
+- 每日记忆：当天发生的事
+- 项目记忆：项目相关信息
+- 分类清晰，便于检索
+
+**记忆更新**：
+- 定期清理过期记忆
+- 合并重复的记忆
+- 保持记忆简洁
+
+**隐私保护**：
+- 敏感信息不要写入记忆
+- 定期备份记忆文件
+- 使用加密存储（可选）
+
+---
+
 ## 本章小结
 
 通过本章学习，你应该能够：
@@ -777,6 +1174,10 @@ openclaw cron add --name "内容日报" \
 - ✅ 使用三种方式调用技能
 - ✅ 配置技能的环境变量和参数
 - ✅ 管理技能的生命周期
+- ✅ 配置和切换多个 AI 模型
+- ✅ 配置多个飞书机器人
+- ✅ 使用长期记忆系统
+- ✅ 设置定时任务（Heartbeat + Cron）
 - ✅ 排查常见问题
 
 **下一章**：[第 3 章：常用技能详解](./03-common-skills.md)
@@ -787,8 +1188,12 @@ openclaw cron add --name "内容日报" \
 
 1. 安装一个天气技能并配置 API 密钥
 2. 使用三种不同方式调用天气技能
-3. 禁用一个技能，然后再启用它
-4. 检查并更新所有已安装的技能
+3. 配置两个 AI 模型，并在不同任务中切换
+4. 配置多个飞书机器人（工作 + 个人）
+5. 写入 3 条长期记忆，并测试检索
+6. 设置一个每日定时任务和一个一次性提醒
+7. 禁用一个技能，然后再启用它
+8. 检查并更新所有已安装的技能
 
 ---
 
