@@ -78,6 +78,10 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 2. 登录飞书账号（没有账号需要先注册）
 3. 点击右上角 **开发者后台**
 
+![飞书开放平台](../images/feishu-open-platform.jpg)
+
+![飞书开发者后台入口](../images/feishu-developer-console.jpg)
+
 **步骤 2：创建应用**
 
 1. 点击 **创建应用**
@@ -85,12 +89,16 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 3. 填写应用名称（如：OpenClaw 助手）
 4. 点击 **创建**
 
+![创建飞书应用](../images/feishu-create-app.jpg)
+
 **步骤 3：获取应用凭证**
 
 1. 进入 **凭证管理** 页面
 2. 记录 **App ID** 和 **App Secret**
 
 > ⚠️ 重要：App Secret 只显示一次，请立即保存！
+
+![获取应用凭证](../images/feishu-credentials.jpg)
 
 **步骤 4：添加机器人**
 
@@ -106,6 +114,8 @@ OpenClaw 支持连接多个即时通讯平台，国内用户推荐使用**飞书
 - `im:message:send` - 发送消息
 - `im:file` - 访问文件
 - `contact:contact` - 获取通讯录信息
+
+![配置权限](../images/feishu-permissions.jpg)
 
 **步骤 6：创建版本并发布**
 
