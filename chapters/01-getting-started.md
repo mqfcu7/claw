@@ -185,13 +185,13 @@ openclaw gateway restart
 
 ---
 
-## 1.4 实战案例：飞书文件传输技能
+## 1.4 飞书传输文件
 
-OpenClaw 的强大之处在于可以通过技能扩展功能。让我们创建一个实用的飞书文件传输技能。
+OpenClaw 支持通过飞书机器人发送文件。你可以使用 Python 脚本实现文件传输功能。
 
-### 1.4.1 技能功能
+### 1.4.1 功能说明
 
-这个技能可以：
+飞书文件传输功能可以：
 - ✅ 从 OpenClaw 自动发送文件到飞书
 - ✅ 支持任意文件类型（PDF、图片、文档等）
 - ✅ 无需手动操作
@@ -329,7 +329,7 @@ python3 feishu_file_transfer.py $FEISHU_APP_ID $FEISHU_APP_SECRET ./test.pdf ou_
 
 在飞书中查看是否收到文件。
 
-### 1.4.4 集成到 OpenClaw
+### 1.4.4 技能配置
 
 创建 SKILL.md 配置文件：
 
